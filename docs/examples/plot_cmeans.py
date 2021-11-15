@@ -20,11 +20,9 @@ In this example we will first undertake necessary imports, then define some
 test data to work with.
 
 """
-import matplotlib.pyplot as plt
-import numpy as np
-import skfuzzy as fuzz
-
-colors = ['b', 'orange', 'g', 'r', 'c', 'm', 'y', 'k', 'Brown', 'ForestGreen']
+from ulab import numpy as np
+import _cmeans
+import normalize_columns
 
 # Define three cluster centers
 centers = [[4, 2],
@@ -37,24 +35,43 @@ sigmas = [[0.8, 0.3],
           [1.1, 0.7]]
 
 # Generate test data
-np.random.seed(42)  # Set seed for reproducibility
 xpts = np.zeros(1)
 ypts = np.zeros(1)
 labels = np.zeros(1)
-for i, ((xmu, ymu), (xsigma, ysigma)) in enumerate(zip(centers, sigmas)):
-    xpts = np.hstack((xpts, np.random.standard_normal(200) * xsigma + xmu))
-    ypts = np.hstack((ypts, np.random.standard_normal(200) * ysigma + ymu))
-    labels = np.hstack((labels, np.ones(200) * i))
 
-# Visualize the test data
-fig0, ax0 = plt.subplots()
-for label in range(3):
-    ax0.plot(xpts[labels == label], ypts[labels == label], '.',
-             color=colors[label])
-ax0.set_title('Test data: 200 points x3 clusters.')
+def hstack_1d(a,b):
+    ca = a.size
+    cb = b.size
+
+    _hstack = np.zeros(ca+cb)
+
+    for i in range(0, ca+cb):
+        if i < ca:
+            _hstack[i] = a[i]
+        else:
+            _hstack[i] = b[i-ca]
+    return _hstack
+
+for i, ((xmu, ymu), (xsigma, ysigma)) in enumerate(zip(centers, sigmas)):
+
+    u0 = np.zeros(200)
+    vrand = np.vectorize(_cmeans.rand)
+    u0 = vrand(u0)
+    u1 = np.zeros(200)
+    vrand = np.vectorize(_cmeans.rand)
+    u1 = vrand(u1)
+
+    xpts = hstack_1d(xpts, u0 * xsigma + xmu)
+    ypts = hstack_1d(ypts, u1 * ysigma + ymu)
+    labels = hstack_1d(labels, np.ones(200) * i)
+
+# Print test data
+
+for label in range(0,3):
+    for i in range(0,200):
+        print('$label' + str(label) + ':' + str(xpts[i+label*200]) + ',' + str(ypts[i+label*200]))
 
 """
-.. image:: PLOT2RST.current_figure
 
 Clustering
 ----------

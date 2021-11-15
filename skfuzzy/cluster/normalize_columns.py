@@ -1,7 +1,7 @@
 """
 _normalize_columns.py : Normalize columns.
 """
-import numpy as np
+from ulab import numpy as np
 
 
 def normalize_columns(columns):
@@ -16,11 +16,11 @@ def normalize_columns(columns):
     Returns
     -------
     normalized_columns : 2d array (M x N)
-        columns/np.sum(columns, axis=0, keepdims=1)
+        columns/np.sum(columns, axis=0)
     """
 
     # broadcast sum over columns
-    normalized_columns = columns/np.sum(columns, axis=0, keepdims=1)
+    normalized_columns = columns/np.sum(columns, axis=0)
 
     return normalized_columns
 
@@ -44,19 +44,17 @@ def normalize_power_columns(x, exponent):
 
     """
 
-    assert np.all(x >= 0.0)
+    # assert np.all(x >= 0.0) ::CANT::
 
-    x = x.astype(np.float64)
+    # x = x.astype(np.float64) ::CANT::
 
     # values in range [0, 1]
-    x = x/np.max(x, axis=0, keepdims=True)
+    x = x/np.max(x, axis=0)
 
-    # values in range [eps, 1]
-    x = np.fmax(x, np.finfo(x.dtype).eps)
 
     if exponent < 0:
         # values in range [1, 1/eps]
-        x /= np.min(x, axis=0, keepdims=True)
+        x /= np.min(x, axis=0)
 
         # values in range [1, (1/eps)**exponent] where exponent < 0
         # this line might trigger an underflow warning

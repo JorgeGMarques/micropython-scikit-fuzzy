@@ -1,10 +1,10 @@
 """
 cmeans.py : Fuzzy C-means clustering algorithm.
 """
-import numpy as np
-from scipy.spatial.distance import cdist
+from ulab import numpy as np
+import random
 
-from .normalize_columns import normalize_columns, normalize_power_columns
+from normalize_columns import normalize_columns, normalize_power_columns
 
 
 def _cmeans0(data, u_old, c, m, metric):
@@ -18,16 +18,16 @@ def _cmeans0(data, u_old, c, m, metric):
     """
     # Normalizing, then eliminating any potential zero values.
     u_old = normalize_columns(u_old)
-    u_old = np.fmax(u_old, np.finfo(np.float64).eps)
+    # u_old = np.fmax(u_old, np.finfo(np.float64).eps)
 
     um = u_old ** m
 
     # Calculate cluster centers
     data = data.T
-    cntr = um.dot(data) / np.atleast_2d(um.sum(axis=1)).T
+    cntr = np.dot(um, data) / _atleast_2d(np.sum(um, axis=1)).T
 
     d = _distance(data, cntr, metric)
-    d = np.fmax(d, np.finfo(np.float64).eps)
+    #d = np.fmax(d, np.finfo(np.float64).eps)
 
     jm = (um * d ** 2).sum()
 
@@ -35,10 +35,28 @@ def _cmeans0(data, u_old, c, m, metric):
 
     return cntr, u, jm, d
 
+def _atleast_2d(x):
+    """
+    Returns atleast 2d array
+
+    Parameters
+    ----------
+    x : array
+
+    Returns
+    -------
+    x : at least 2d array
+    """
+    l = x.shape
+    if len(l) == 1:
+        return np.array([x])
+    else:
+        return x
 
 def _distance(data, centers, metric='euclidean'):
     """
     Euclidean distance from each point to each cluster center.
+    Reduced 2d array implementation of scipy.spatial.distance.cdist
 
     Parameters
     ----------
@@ -58,7 +76,16 @@ def _distance(data, centers, metric='euclidean'):
     --------
     scipy.spatial.distance.cdist
     """
-    return cdist(data, centers, metric=metric).T
+
+    rd, cd = data.shape
+    rc, cc = centers.shape
+
+    if (metric == 'euclidean'):
+        _cdist = np.zeros((rd,rc))
+        for i in range(0,rd):
+            for j in range(0,rc):
+                _cdist[i][j] = ((data[i][0]-centers[j][0])**2+(data[i][1]-centers[j][1])**2)**0.5
+        return _cdist
 
 
 def _fp_coeff(u):
@@ -80,12 +107,52 @@ def _fp_coeff(u):
     """
     n = u.shape[1]
 
-    return np.trace(u.dot(u.T)) / float(n)
+    return np.trace(np.dot(u, u.T)) / float(n)
 
+def rand(x):
+    """
+    Return a random number from 0 to 1.
+    x value is discarted.
+
+    Parameters
+    ----------
+    x : value to discard
+
+    """
+
+    return random.random()
+
+def hstack(a,b):
+    """
+    Stack 2-D arrays in sequence horizontally (column wise).
+    All columns must have the same number of rows.
+
+    Parameters
+    ----------
+    a : 2d array (C, N)
+    b : 2d array (C, N)
+
+    Returns
+    -------
+    Horizontal stacked array
+    """
+
+    ra, ca = a.shape
+    rb, cb = b.shape
+
+    _hstack = np.zeros((max(ra,rb), ca+cb))
+
+    for i in range(0, max(ra,rb)):
+        for j in range(0, ca+cb):
+            if j < ca:
+                _hstack[i][j] = a[i][j] if i < ra else 0
+            else:
+                _hstack[i][j] = b[i][j-ca] if i < rb else 0
+    return _hstack
 
 def cmeans(data, c, m, error, maxiter,
            metric='euclidean',
-           init=None, seed=None):
+           init=None):
     """
     Fuzzy c-means clustering algorithm [1].
 
@@ -109,9 +176,6 @@ def cmeans(data, c, m, error, maxiter,
     init : 2d array, size (c, N)
         Initial fuzzy c-partitioned matrix. If none provided, algorithm is
         randomly initialized.
-    seed : int
-        If provided, sets random seed of init. No effect if init is
-        provided. Mainly for debug/testing purposes.
 
     Returns
     -------
@@ -154,14 +218,14 @@ def cmeans(data, c, m, error, maxiter,
     """
     # Setup u0
     if init is None:
-        if seed is not None:
-            np.random.seed(seed=seed)
         n = data.shape[1]
-        u0 = np.random.rand(c, n)
+        u0 = np.zeros((c,n))
+        vrand = np.vectorize(rand)
+        u0 = vrand(u0)
         u0 = normalize_columns(u0)
         init = u0.copy()
-    u0 = init
-    u = np.fmax(u0, np.finfo(np.float64).eps)
+    u = init
+    # u = np.fmax(u0, np.finfo(np.float64).eps) ::TODO::u0 was init
 
     # Initialize loop parameters
     jm = np.zeros(0)
@@ -171,7 +235,7 @@ def cmeans(data, c, m, error, maxiter,
     while p < maxiter - 1:
         u2 = u.copy()
         [cntr, u, Jjm, d] = _cmeans0(data, u2, c, m, metric)
-        jm = np.hstack((jm, Jjm))
+        jm = hstack(jm, Jjm)
         p += 1
 
         # Stopping rule
@@ -213,9 +277,6 @@ def cmeans_predict(test_data, cntr_trained, m, error, maxiter,
     init : 2d array, size (c, N)
         Initial fuzzy c-partitioned matrix. If none provided, algorithm is
         randomly initialized.
-    seed : int
-        If provided, sets random seed of init. No effect if init is
-        provided. Mainly for debug/testing purposes.
 
     Returns
     -------
@@ -249,14 +310,13 @@ def cmeans_predict(test_data, cntr_trained, m, error, maxiter,
 
     # Setup u0
     if init is None:
-        if seed is not None:
-            np.random.seed(seed=seed)
         n = test_data.shape[1]
-        u0 = np.random.rand(c, n)
+        u0 = np.zeros((c,n))
+        vrand = np.vectorize(rand)
         u0 = normalize_columns(u0)
         init = u0.copy()
     u0 = init
-    u = np.fmax(u0, np.finfo(np.float64).eps)
+    # u = np.fmax(u0, np.finfo(np.float64).eps) ::TODO::
 
     # Initialize loop parameters
     jm = np.zeros(0)
@@ -267,7 +327,7 @@ def cmeans_predict(test_data, cntr_trained, m, error, maxiter,
         u2 = u.copy()
         [u, Jjm, d] = _cmeans_predict0(test_data, cntr_trained, u2, c, m,
                                        metric)
-        jm = np.hstack((jm, Jjm))
+        jm = hstack(jm, Jjm)
         p += 1
 
         # Stopping rule
