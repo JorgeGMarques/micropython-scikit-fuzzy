@@ -64,6 +64,14 @@ def hstack_1d(a,b):
             _hstack[i] = b[i-ca]
     return _hstack
 
+def serializeCSV(a,b,offset,_id):
+    _comma = ','*offset
+    if (hasattr(a, 'size')):
+        for i in range(0,a.size):
+            print('$' + _id + ':' + str(a[i]) + ',' + _comma + str(b[i]))
+    else:
+        print('$' + _id + ':' + str(a) + ',' + _comma + str(b))
+
 
 def normalvariate(x):
     """Normal distribution.
@@ -103,10 +111,8 @@ for i, ((xmu, ymu), (xsigma, ysigma)) in enumerate(zip(centers, sigmas)):
     labels = hstack_1d(labels, np.ones(POINTS) * i)
 
 # Print test data
-_comma = [',',',,',',,,']
 for label in range(0,3):
-    for i in range(0,POINTS):
-        print('$clusters0:' + str(xpts[i+label*POINTS]) + _comma[label] + str(ypts[i+label*POINTS]))
+    serializeCSV(xpts[labels == label], ypts[labels == label], label, 'clusters0')
 
 gc.collect()
 
@@ -119,7 +125,7 @@ Above is our test data. We see three distinct blobs. However, what would happen
 if we didn't know how many clusters we should expect? Perhaps if the data were
 not so clearly clustered?
 
-Let's try clustering our data several times, with between 2 and 9 clusters.
+Let's try clustering our data several times, with between 2 and 5 clusters.
 
 """
 def vstack_1d(a,b):
@@ -137,7 +143,7 @@ def vstack_1d(a,b):
 alldata = _cmeans.vstack(xpts, ypts)
 fpcs = []
 
-for ncenters in range(2, 12):
+for ncenters in range(2, 6):
     cntr, u, u0, d, jm, p, fpc = _cmeans.cmeans(
         alldata, ncenters, 2, error=0.005, maxiter=1000, init=None)
 
@@ -148,16 +154,15 @@ for ncenters in range(2, 12):
     cluster_membership = np.argmax(u, axis=0)
     _comma = ','
     for j in range(ncenters):
-        for i in range(0,POINTS):
-            print('$clusters2_' + str(ncenters) + ':' + str(xpts[i+j*POINTS]) + _comma + str(ypts[i+j*POINTS]))
-        _comma += ','
+        serializeCSV(xpts[cluster_membership == j], ypts[cluster_membership == j], j, 'clusters1_' + str(ncenters))
 
 
     # Mark the center of each fuzzy cluster
-    _comma2 = ','
+    i = 0
     for pt in cntr:
-        print('$clusters2_' + str(ncenters) + ':' + str(pt[0]) + _comma + _comma2 + str(pt[1]))
-        _comma2 += ','
+        serializeCSV(pt[0], pt[1], ncenters + i, 'clusters1_' + str(ncenters))
+        i+=1
+
     gc.collect()
 
 
