@@ -29,7 +29,7 @@ def _cmeans0(data, u_old, c, m, metric):
     d = _distance(data, cntr, metric)
     #d = np.fmax(d, np.finfo(np.float64).eps)
 
-    jm = (um * d ** 2).sum()
+    jm = np.sum(um * d ** 2)
 
     u = normalize_power_columns(d, - 2. / (m - 1))
 
@@ -47,11 +47,14 @@ def _atleast_2d(x):
     -------
     x : at least 2d array
     """
-    l = x.shape
-    if len(l) == 1:
-        return np.array([x])
+    if (hasattr(x, 'shape')):
+        l = x.shape
+        if len(l) == 0 or len(l) == 1:
+            return np.array([x])
+        else:
+            return x
     else:
-        return x
+        return np.array([[x]])
 
 def _distance(data, centers, metric='euclidean'):
     """
@@ -85,7 +88,7 @@ def _distance(data, centers, metric='euclidean'):
         for i in range(0,rd):
             for j in range(0,rc):
                 _cdist[i][j] = ((data[i][0]-centers[j][0])**2+(data[i][1]-centers[j][1])**2)**0.5
-        return _cdist
+        return _cdist.T
 
 
 def _fp_coeff(u):
@@ -124,8 +127,7 @@ def rand(x):
 
 def hstack(a,b):
     """
-    Stack 2-D arrays in sequence horizontally (column wise).
-    All columns must have the same number of rows.
+    Stack 1-D 2-D arrays in sequence horizontally (column wise).
 
     Parameters
     ----------
@@ -136,6 +138,9 @@ def hstack(a,b):
     -------
     Horizontal stacked array
     """
+
+    a = _atleast_2d(a)
+    b = _atleast_2d(b)
 
     ra, ca = a.shape
     rb, cb = b.shape
@@ -149,6 +154,36 @@ def hstack(a,b):
             else:
                 _hstack[i][j] = b[i][j-ca] if i < rb else 0
     return _hstack
+
+def vstack(a,b):
+    """
+    Stack 1-D or 2-D arrays in sequence vertically (row wise).
+
+    Parameters
+    ----------
+    a : 2d array (C, N)
+    b : 2d array (C, N)
+
+    Returns
+    -------
+    Vertical stacked array
+    """
+
+    a = _atleast_2d(a)
+    b = _atleast_2d(b)
+
+    ra, ca = a.shape
+    rb, cb = b.shape
+
+    _vstack = np.zeros((ra+rb, max(ca,cb)))
+
+    for i in range(0, ra + rb):
+        for j in range(0, max(ca,cb)):
+            if i < ra:
+                _vstack[i][j] = a[i][j] if j < ca else 0
+            else:
+                _vstack[i][j] = b[i-ra][j] if j < cb else 0
+    return _vstack
 
 def cmeans(data, c, m, error, maxiter,
            metric='euclidean',
@@ -366,7 +401,7 @@ def _cmeans_predict0(test_data, cntr, u_old, c, m, metric):
     d = _distance(test_data, cntr, metric)
     d = np.fmax(d, np.finfo(np.float64).eps)
 
-    jm = (um * d ** 2).sum()
+    jm = np.sum(um * d ** 2)
 
     u = normalize_power_columns(d, - 2. / (m - 1))
 

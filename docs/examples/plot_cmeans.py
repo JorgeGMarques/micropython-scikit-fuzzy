@@ -23,6 +23,18 @@ test data to work with.
 from ulab import numpy as np
 import _cmeans
 import normalize_columns
+import math
+import random
+import gc
+
+# Enable garbage collection
+gc.enable()
+
+NV_MAGICCONST = 4 * math.exp(-0.5)/2.0**.5
+
+# Number os points per cluster
+POINTS = 50
+
 
 # Define three cluster centers
 centers = [[4, 2],
@@ -52,24 +64,51 @@ def hstack_1d(a,b):
             _hstack[i] = b[i-ca]
     return _hstack
 
+
+def normalvariate(x):
+    """Normal distribution.
+
+    mu is the mean, and sigma is the standard deviation.
+    `source <https://microbit-micropython.readthedocs.io/en/latest/_modules/random.html>`_
+
+    """
+    # Uses Kinderman and Monahan method. Reference: Kinderman,
+    # A.J. and Monahan, J.F., "Computer generation of random
+    # variables using the ratio of uniform deviates", ACM Trans
+    # Math Software, 3, (1977), pp257-260.
+
+    mu = 1
+    sigma = 1
+
+    while 1:
+        u1 = random.random()
+        u2 = 1.0 - random.random()
+        z = NV_MAGICCONST*(u1-0.5)/u2
+        zz = z*z/4.0
+        if zz <= -math.log(u2):
+            break
+    return mu + z*sigma
+
 for i, ((xmu, ymu), (xsigma, ysigma)) in enumerate(zip(centers, sigmas)):
 
-    u0 = np.zeros(200)
-    vrand = np.vectorize(_cmeans.rand)
+    u0 = np.zeros(POINTS)
+    vrand = np.vectorize(normalvariate)
     u0 = vrand(u0)
-    u1 = np.zeros(200)
-    vrand = np.vectorize(_cmeans.rand)
+    u1 = np.zeros(POINTS)
+    vrand = np.vectorize(normalvariate)
     u1 = vrand(u1)
 
     xpts = hstack_1d(xpts, u0 * xsigma + xmu)
     ypts = hstack_1d(ypts, u1 * ysigma + ymu)
-    labels = hstack_1d(labels, np.ones(200) * i)
+    labels = hstack_1d(labels, np.ones(POINTS) * i)
 
 # Print test data
-
+_comma = [',',',,',',,,']
 for label in range(0,3):
-    for i in range(0,200):
-        print('$label' + str(label) + ':' + str(xpts[i+label*200]) + ',' + str(ypts[i+label*200]))
+    for i in range(0,POINTS):
+        print('$clusters0:' + str(xpts[i+label*POINTS]) + _comma[label] + str(ypts[i+label*POINTS]))
+
+gc.collect()
 
 """
 
@@ -83,13 +122,23 @@ not so clearly clustered?
 Let's try clustering our data several times, with between 2 and 9 clusters.
 
 """
+def vstack_1d(a,b):
+    ca = a.size
+    cb = b.size
+
+    _hstack = np.zeros(1,ca+cb)
+
+    for i in range(0, ca+cb):
+        if i < ca:
+            _hstack[i] = a[i]
+        else:
+            _hstack[i] = b[i-ca]
 # Set up the loop and plot
-fig1, axes1 = plt.subplots(3, 3, figsize=(8, 8))
-alldata = np.vstack((xpts, ypts))
+alldata = _cmeans.vstack(xpts, ypts)
 fpcs = []
 
-for ncenters, ax in enumerate(axes1.reshape(-1), 2):
-    cntr, u, u0, d, jm, p, fpc = fuzz.cluster.cmeans(
+for ncenters in range(2, 12):
+    cntr, u, u0, d, jm, p, fpc = _cmeans.cmeans(
         alldata, ncenters, 2, error=0.005, maxiter=1000, init=None)
 
     # Store fpc values for later
@@ -97,18 +146,20 @@ for ncenters, ax in enumerate(axes1.reshape(-1), 2):
 
     # Plot assigned clusters, for each data point in training set
     cluster_membership = np.argmax(u, axis=0)
+    _comma = ','
     for j in range(ncenters):
-        ax.plot(xpts[cluster_membership == j],
-                ypts[cluster_membership == j], '.', color=colors[j])
+        for i in range(0,POINTS):
+            print('$clusters2_' + str(ncenters) + ':' + str(xpts[i+j*POINTS]) + _comma + str(ypts[i+j*POINTS]))
+        _comma += ','
+
 
     # Mark the center of each fuzzy cluster
+    _comma2 = ','
     for pt in cntr:
-        ax.plot(pt[0], pt[1], 'rs')
+        print('$clusters2_' + str(ncenters) + ':' + str(pt[0]) + _comma + _comma2 + str(pt[1]))
+        _comma2 += ','
+    gc.collect()
 
-    ax.set_title('Centers = {0}; FPC = {1:.2f}'.format(ncenters, fpc))
-    ax.axis('off')
-
-fig1.tight_layout()
 
 """
 .. image:: PLOT2RST.current_figure
