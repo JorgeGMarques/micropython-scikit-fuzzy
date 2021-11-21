@@ -350,7 +350,7 @@ def cmeans_predict(test_data, cntr_trained, m, error, maxiter,
         vrand = np.vectorize(rand)
         u0 = normalize_columns(u0)
         init = u0.copy()
-    u0 = init
+    u = init
     # u = np.fmax(u0, np.finfo(np.float64).eps) ::TODO::
 
     # Initialize loop parameters
@@ -390,7 +390,7 @@ def _cmeans_predict0(test_data, cntr, u_old, c, m, metric):
     """
     # Normalizing, then eliminating any potential zero values.
     u_old = normalize_columns(u_old)
-    u_old = np.fmax(u_old, np.finfo(np.float64).eps)
+    #u_old = np.fmax(u_old, np.finfo(np.float64).eps) ::TODO::
 
     um = u_old ** m
     test_data = test_data.T
@@ -399,7 +399,7 @@ def _cmeans_predict0(test_data, cntr, u_old, c, m, metric):
     # forced to conform to the prior clustering.
 
     d = _distance(test_data, cntr, metric)
-    d = np.fmax(d, np.finfo(np.float64).eps)
+    #d = np.fmax(d, np.finfo(np.float64).eps)
 
     jm = np.sum(um * d ** 2)
 

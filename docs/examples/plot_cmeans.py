@@ -167,7 +167,6 @@ for ncenters in range(2, 6):
 
 
 """
-.. image:: PLOT2RST.current_figure
 
 The fuzzy partition coefficient (FPC)
 -------------------------------------
@@ -181,13 +180,13 @@ maximized, our data is described best.
 
 """
 
-fig2, ax2 = plt.subplots()
-ax2.plot(np.r_[2:11], fpcs)
-ax2.set_xlabel("Number of centers")
-ax2.set_ylabel("Fuzzy partition coefficient")
+label_ = np.zeros(len(fpcs))
+for i_ in range(0,len(fpcs)):
+    label_[i_] = i_+2
+
+serializeCSV(label_, fpcs, 0, 'clusters2_fpc')
 
 """
-.. image:: PLOT2RST.current_figure
 
 As we can see, the ideal number of centers is 3. This isn't news for our
 contrived example, but having the FPC available can be very useful when the
@@ -216,20 +215,14 @@ cluster to which each new data point belongs.
 """
 # Regenerate fuzzy model with 3 cluster centers - note that center ordering
 # is random in this clustering algorithm, so the centers may change places
-cntr, u_orig, _, _, _, _, _ = fuzz.cluster.cmeans(
+cntr, u_orig, _, _, _, _, _ = _cmeans.cmeans(
     alldata, 3, 2, error=0.005, maxiter=1000)
 
 # Show 3-cluster model
-fig2, ax2 = plt.subplots()
-ax2.set_title('Trained model')
 for j in range(3):
-    ax2.plot(alldata[0, u_orig.argmax(axis=0) == j],
-             alldata[1, u_orig.argmax(axis=0) == j], 'o',
-             label='series ' + str(j))
-ax2.legend()
+    serializeCSV(xpts[np.argmax(u_orig, axis=0) == j], ypts[np.argmax(u_orig, axis=0) == j], j, 'clusters3')
 
 """
-.. image:: PLOT2RST.current_figure
 
 Prediction
 ----------
@@ -240,12 +233,14 @@ via ``cmeans_predict``, incorporating it into the pre-existing model.
 """
 
 # Generate uniformly sampled data spread across the range [0, 10] in x and y
-newdata = np.random.uniform(0, 1, (1100, 2)) * 10
+newdata = np.zeros((2,100))
+vrand = np.vectorize(_cmeans.rand)
+newdata = vrand(u0) * 10
 
 # Predict new cluster membership with `cmeans_predict` as well as
 # `cntr` from the 3-cluster model
-u, u0, d, jm, p, fpc = fuzz.cluster.cmeans_predict(
-    newdata.T, cntr, 2, error=0.005, maxiter=1000)
+u, u0, d, jm, p, fpc = _cmeans.cmeans_predict(
+    newdata, cntr, 2, error=0.005, maxiter=1000)
 
 # Plot the classified uniform data. Note for visualization the maximum
 # membership value has been taken at each point (i.e. these are hardened,
@@ -253,17 +248,7 @@ u, u0, d, jm, p, fpc = fuzz.cluster.cmeans_predict(
 # from cmeans_predict.
 cluster_membership = np.argmax(u, axis=0)  # Hardening for visualization
 
-fig3, ax3 = plt.subplots()
-ax3.set_title('Random points classified according to known centers')
 for j in range(3):
-    ax3.plot(newdata[cluster_membership == j, 0],
-             newdata[cluster_membership == j, 1], 'o',
-             label='series ' + str(j))
-ax3.legend()
+    serializeCSV(newdata[0][cluster_membership == j, 0],
+             newdata[1][cluster_membership == j, 1], j, 'clusters4')
 
-plt.show()
-
-"""
-.. image:: PLOT2RST.current_figure
-
-"""
