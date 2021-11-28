@@ -1,3 +1,6 @@
 [submodule "docs/tools/gitwash"]
 	path = docs/tools/gitwash
 	url = https://github.com/matthew-brett/gitwash.git
+[submodule "Commands"]
+	path = bipes
+	url = git@github.com:BIPES/Commands.git

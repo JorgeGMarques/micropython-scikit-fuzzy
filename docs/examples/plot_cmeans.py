@@ -21,6 +21,7 @@ test data to work with.
 
 """
 from ulab import numpy as np
+from bipes import databoard as db
 import _cmeans
 import normalize_columns
 import math
@@ -64,15 +65,6 @@ def hstack_1d(a,b):
             _hstack[i] = b[i-ca]
     return _hstack
 
-def serializeCSV(a,b,offset,_id):
-    _comma = ','*offset
-    if (hasattr(a, 'size')):
-        for i in range(0,a.size):
-            print('$' + _id + ':' + str(a[i]) + ',' + _comma + str(b[i]))
-    else:
-        print('$' + _id + ':' + str(a) + ',' + _comma + str(b))
-
-
 def normalvariate(x):
     """Normal distribution.
 
@@ -112,7 +104,7 @@ for i, ((xmu, ymu), (xsigma, ysigma)) in enumerate(zip(centers, sigmas)):
 
 # Print test data
 for label in range(0,3):
-    serializeCSV(xpts[labels == label], ypts[labels == label], label, 'clusters0')
+    db.push(xpts[labels == label], ypts[labels == label], label, 'clusters0')
 
 gc.collect()
 
@@ -154,13 +146,13 @@ for ncenters in range(2, 6):
     cluster_membership = np.argmax(u, axis=0)
     _comma = ','
     for j in range(ncenters):
-        serializeCSV(xpts[cluster_membership == j], ypts[cluster_membership == j], j, 'clusters1_' + str(ncenters))
+        db.push(xpts[cluster_membership == j], ypts[cluster_membership == j], j, 'clusters1_' + str(ncenters))
 
 
     # Mark the center of each fuzzy cluster
     i = 0
     for pt in cntr:
-        serializeCSV(pt[0], pt[1], ncenters + i, 'clusters1_' + str(ncenters))
+        db.push(pt[0], pt[1], ncenters + i, 'clusters1_' + str(ncenters))
         i+=1
 
     gc.collect()
@@ -184,7 +176,7 @@ label_ = np.zeros(len(fpcs))
 for i_ in range(0,len(fpcs)):
     label_[i_] = i_+2
 
-serializeCSV(label_, fpcs, 0, 'clusters2_fpc')
+db.push(label_, fpcs, 0, 'clusters2_fpc')
 
 """
 
@@ -220,7 +212,7 @@ cntr, u_orig, _, _, _, _, _ = _cmeans.cmeans(
 
 # Show 3-cluster model
 for j in range(3):
-    serializeCSV(xpts[np.argmax(u_orig, axis=0) == j], ypts[np.argmax(u_orig, axis=0) == j], j, 'clusters3')
+    db.push(xpts[np.argmax(u_orig, axis=0) == j], ypts[np.argmax(u_orig, axis=0) == j], j, 'clusters3')
 
 """
 
@@ -249,6 +241,6 @@ u, u0, d, jm, p, fpc = _cmeans.cmeans_predict(
 cluster_membership = np.argmax(u, axis=0)  # Hardening for visualization
 
 for j in range(3):
-    serializeCSV(newdata[0][cluster_membership == j, 0],
-             newdata[1][cluster_membership == j, 1], j, 'clusters4')
+    db.push(newdata[0][cluster_membership == j],
+             newdata[1][cluster_membership == j], j, 'clusters4')
 
