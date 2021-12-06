@@ -1,7 +1,8 @@
 """
 generatemf.py: Library of standard fuzzy membership function generators.
 """
-import numpy as np
+from ulab import numpy as np
+import ulab_extended as _np
 
 
 def _nearest(x, y0):
@@ -29,8 +30,8 @@ def _nearest(x, y0):
     Use with care.
     """
     # Distance map
-    d = np.abs(x - y0)
-    idx0 = np.nonzero(d == d.min())[0][0]
+    d = abs(x - y0)
+    idx0 = np.nonzero(d, '==', d.min())[0][0]
     return idx0, x[idx0]
 
 
@@ -144,7 +145,7 @@ def gbellmf(x, a, b, c):
 
         y(x) = 1 / (1 + abs([x - c] / a) ** [2 * b])
     """
-    return 1. / (1. + np.abs((x - c) / a) ** (2 * b))
+    return 1. / (1. + abs((x - c) / a) ** (2 * b))
 
 
 def piecemf(x, abc):
@@ -172,8 +173,8 @@ def piecemf(x, abc):
                 y = x/c,                  b <= x <= c
     """
     a, b, c = abc
-    if c != x.max():
-        c = x.max()
+    if c != np.max(x):
+        c = np.max(x)
 
     assert a <= b and b <= c, '`abc` requires a <= b <= c.'
 
@@ -184,10 +185,10 @@ def piecemf(x, abc):
     idxa = _nearest(x, a)[0]
     idxb = _nearest(x, b)[0]
 
-    n = np.r_[0:n - idx0]
+    n = np.linspace(0,n-idx0,n-idx0+1)
     y[idx0 + n] = n / float(c)
     y[idx0:idxa] = 0
-    m = np.r_[0:idxb - idxa]
+    m = np.linspace(0,idxb-idxa,idxb-idxa+1)
     y[idxa:idxb] = b * m / (float(c) * (b - a))
 
     return y / y.max()
@@ -225,16 +226,16 @@ def pimf(x, a, b, c, d):
     idx = x <= a
     y[idx] = 0
 
-    idx = np.logical_and(a <= x, x <= (a + b) / 2.)
+    idx = _np.logical_and(np.where(x >= a, 1, 0), np.where(x <= (a + b) / 2.), 1, 0)
     y[idx] = 2. * ((x[idx] - a) / (b - a)) ** 2.
 
-    idx = np.logical_and((a + b) / 2. < x, x <= b)
+    idx = _np.logical_and(np.where(x > (a + b) / 2., 1, 0), np.where(x <= b, 1, 0)
     y[idx] = 1 - 2. * ((x[idx] - b) / (b - a)) ** 2.
 
-    idx = np.logical_and(c <= x, x < (c + d) / 2.)
+    idx = _np.logical_and(np.where(x >= c, 1, 0), np.where(x < (c + d) / 2.), 1, 0)
     y[idx] = 1 - 2. * ((x[idx] - c) / (d - c)) ** 2.
 
-    idx = np.logical_and((c + d) / 2. <= x, x <= d)
+    idx = _np.logical_and(np.where(x >= (c + d) / 2., 1, 0), np.where(x <= d), 1, 0)
     y[idx] = 2. * ((x[idx] - d) / (d - c)) ** 2.
 
     idx = x >= d
@@ -303,7 +304,7 @@ def sigmoid(wx, b):
     sigmoid : 2d array, (K, N)
         Sigmoid function result.
     """
-    return 1. / (1. + np.exp(-(wx + np.dot(np.atleast_2d(b).T,
+    return 1. / (1. + np.exp(-(wx + np.dot(_np.atleast_2d(b).T,
                                            np.ones((1, wx.shape[1]))))))
 
 
@@ -365,10 +366,10 @@ def smf(x, a, b):
     idx = x <= a
     y[idx] = 0
 
-    idx = np.logical_and(a <= x, x <= (a + b) / 2.)
+    idx = _np.logical_and(np.where(x >= a, 1, 0), np.where(x <= (a + b) / 2., 1, 0)
     y[idx] = 2. * ((x[idx] - a) / (b - a)) ** 2.
 
-    idx = np.logical_and((a + b) / 2. <= x, x <= b)
+    idx = _np.logical_and(np.where(x >= (a + b) / 2.), 1, 0), np.where(x <= b, 1, 0)
     y[idx] = 1 - 2. * ((x[idx] - b) / (b - a)) ** 2.
 
     return y
@@ -391,21 +392,21 @@ def trapmf(x, abcd):
         Trapezoidal membership function.
     """
     assert len(abcd) == 4, 'abcd parameter must have exactly four elements.'
-    a, b, c, d = np.r_[abcd]
+    a, b, c, d = abcd
     assert a <= b and b <= c and c <= d, 'abcd requires the four elements \
                                           a <= b <= c <= d.'
     y = np.ones(len(x))
 
-    idx = np.nonzero(x <= b)[0]
-    y[idx] = trimf(x[idx], np.r_[a, b, b])
+    idx = _np.nonzero(x, '<=', b)[0]
+    y[idx] = trimf(x[idx], np.array([a, b, b]))
 
-    idx = np.nonzero(x >= c)[0]
-    y[idx] = trimf(x[idx], np.r_[c, c, d])
+    idx = _np.nonzero(x, '>=', c)[0]
+    y[idx] = trimf(x[idx], np.array([c, c, d]))
 
-    idx = np.nonzero(x < a)[0]
+    idx = _np.nonzero(x, '<', a)[0]
     y[idx] = np.zeros(len(idx))
 
-    idx = np.nonzero(x > d)[0]
+    idx = _np.nonzero(x, '>', d)[0]
     y[idx] = np.zeros(len(idx))
 
     return y
@@ -429,22 +430,22 @@ def trimf(x, abc):
         Triangular membership function.
     """
     assert len(abc) == 3, 'abc parameter must have exactly three elements.'
-    a, b, c = np.r_[abc]     # Zero-indexing in Python
+    a, b, c = abc     # Zero-indexing in Python
     assert a <= b and b <= c, 'abc requires the three elements a <= b <= c.'
 
     y = np.zeros(len(x))
 
     # Left side
     if a != b:
-        idx = np.nonzero(np.logical_and(a < x, x < b))[0]
+        idx = _np.nonzero(_np.logical_and(np.where(x > a, 1, 0), np.where(x < b, 1, 0)), '==', 1)[0]
         y[idx] = (x[idx] - a) / float(b - a)
 
     # Right side
     if b != c:
-        idx = np.nonzero(np.logical_and(b < x, x < c))[0]
+        idx = _np.nonzero(_np.logical_and(np.where(x > b, 1, 0), np.where(x < c, 1, 0)), '==', 1)[0]
         y[idx] = (c - x[idx]) / float(c - b)
 
-    idx = np.nonzero(x == b)
+    idx = _np.nonzero(x, '==', b)
     y[idx] = 1
     return y
 
@@ -475,10 +476,10 @@ def zmf(x, a, b):
 
     y = np.ones(len(x))
 
-    idx = np.logical_and(a <= x, x < (a + b) / 2.)
+    idx = _np.logical_and(np.where(x >= a, 1, 0), np.where(x < (a + b) / 2., 1, 0))
     y[idx] = 1 - 2. * ((x[idx] - a) / (b - a)) ** 2.
 
-    idx = np.logical_and((a + b) / 2. <= x, x <= b)
+    idx = _np.logical_and(np.where(x >= (a + b) / 2., 1, 0), np.where(x <= b, 1, 0))
     y[idx] = 2. * ((x[idx] - b) / (b - a)) ** 2.
 
     idx = x >= b

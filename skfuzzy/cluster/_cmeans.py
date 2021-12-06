@@ -2,6 +2,7 @@
 cmeans.py : Fuzzy C-means clustering algorithm.
 """
 from ulab import numpy as np
+import ulab_extended as _np
 import random
 
 from normalize_columns import normalize_columns, normalize_power_columns
@@ -24,7 +25,7 @@ def _cmeans0(data, u_old, c, m, metric):
 
     # Calculate cluster centers
     data = data.T
-    cntr = np.dot(um, data) / _atleast_2d(np.sum(um, axis=1)).T
+    cntr = np.dot(um, data) / _np.atleast_2d(np.sum(um, axis=1)).T
 
     d = _distance(data, cntr, metric)
     #d = np.fmax(d, np.finfo(np.float64).eps)
@@ -35,26 +36,6 @@ def _cmeans0(data, u_old, c, m, metric):
 
     return cntr, u, jm, d
 
-def _atleast_2d(x):
-    """
-    Returns atleast 2d array
-
-    Parameters
-    ----------
-    x : array
-
-    Returns
-    -------
-    x : at least 2d array
-    """
-    if (hasattr(x, 'shape')):
-        l = x.shape
-        if len(l) == 0 or len(l) == 1:
-            return np.array([x])
-        else:
-            return x
-    else:
-        return np.array([[x]])
 
 def _distance(data, centers, metric='euclidean'):
     """
@@ -112,6 +93,7 @@ def _fp_coeff(u):
 
     return np.trace(np.dot(u, u.T)) / float(n)
 
+
 def rand(x):
     """
     Return a random number from 0 to 1.
@@ -125,65 +107,6 @@ def rand(x):
 
     return random.random()
 
-def hstack(a,b):
-    """
-    Stack 1-D 2-D arrays in sequence horizontally (column wise).
-
-    Parameters
-    ----------
-    a : 2d array (C, N)
-    b : 2d array (C, N)
-
-    Returns
-    -------
-    Horizontal stacked array
-    """
-
-    a = _atleast_2d(a)
-    b = _atleast_2d(b)
-
-    ra, ca = a.shape
-    rb, cb = b.shape
-
-    _hstack = np.zeros((max(ra,rb), ca+cb))
-
-    for i in range(0, max(ra,rb)):
-        for j in range(0, ca+cb):
-            if j < ca:
-                _hstack[i][j] = a[i][j] if i < ra else 0
-            else:
-                _hstack[i][j] = b[i][j-ca] if i < rb else 0
-    return _hstack
-
-def vstack(a,b):
-    """
-    Stack 1-D or 2-D arrays in sequence vertically (row wise).
-
-    Parameters
-    ----------
-    a : 2d array (C, N)
-    b : 2d array (C, N)
-
-    Returns
-    -------
-    Vertical stacked array
-    """
-
-    a = _atleast_2d(a)
-    b = _atleast_2d(b)
-
-    ra, ca = a.shape
-    rb, cb = b.shape
-
-    _vstack = np.zeros((ra+rb, max(ca,cb)))
-
-    for i in range(0, ra + rb):
-        for j in range(0, max(ca,cb)):
-            if i < ra:
-                _vstack[i][j] = a[i][j] if j < ca else 0
-            else:
-                _vstack[i][j] = b[i-ra][j] if j < cb else 0
-    return _vstack
 
 def cmeans(data, c, m, error, maxiter,
            metric='euclidean',
@@ -270,7 +193,7 @@ def cmeans(data, c, m, error, maxiter,
     while p < maxiter - 1:
         u2 = u.copy()
         [cntr, u, Jjm, d] = _cmeans0(data, u2, c, m, metric)
-        jm = hstack(jm, Jjm)
+        jm = _np.hstack(jm, Jjm)
         p += 1
 
         # Stopping rule
@@ -362,7 +285,7 @@ def cmeans_predict(test_data, cntr_trained, m, error, maxiter,
         u2 = u.copy()
         [u, Jjm, d] = _cmeans_predict0(test_data, cntr_trained, u2, c, m,
                                        metric)
-        jm = hstack(jm, Jjm)
+        jm = _np.hstack(jm, Jjm)
         p += 1
 
         # Stopping rule

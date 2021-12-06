@@ -2,10 +2,8 @@
 defuzz.py : Various methods for defuzzification and lambda-cuts, to convert
             'fuzzy' systems back into 'crisp' values for decisions.
 """
-import numpy as np
-
-from .exceptions import EmptyMembershipError, InconsistentMFDataError
-from ..image.arraypad import pad
+from ulab import numpy as np
+import ulab_extended as _np
 
 
 def arglcut(ms, lambdacut):
@@ -28,13 +26,13 @@ def arglcut(ms, lambdacut):
 
     Notes
     -----
-    This is a convenience function for `np.nonzero(lambdacut <= ms)` and only
+    This is a convenience function for `np._np.nonzero(lambdacut <= ms)` and only
     half of the indexing operation that can be more concisely accomplished
     via::
 
       ms[lambdacut <= ms]
     """
-    return np.nonzero(lambdacut <= ms)
+    return _np.nonzero(ms, '<=', lambdacut)
 
 
 def centroid(x, mfx):
@@ -69,7 +67,7 @@ def centroid(x, mfx):
     # If the membership function is a singleton fuzzy set:
     if len(x) == 1:
         return (x[0] * mfx[0]
-                / np.fmax(mfx[0], np.finfo(float).eps).astype(float))
+                / mfx[0])
 
     # else return the sum of moment*area/sum of area
     for i in range(1, len(x)):
@@ -98,7 +96,7 @@ def centroid(x, mfx):
             sum_area += area
 
     return (sum_moment_area
-            / np.fmax(sum_area, np.finfo(float).eps).astype(float))
+            / sum_area)
 
 
 def dcentroid(x, mfx, x0):
@@ -180,7 +178,7 @@ def bisector(x, mfx):
 
     # index to the figure which cointains the x point that divide the area of
     # the whole fuzzy set in two
-    index = np.nonzero(np.array(accum_area) >= sum_area / 2.)[0][0]
+    index = _np.nonzero(np.array(accum_area), '>=', sum_area / 2.)[0][0]
 
     # subarea will be the area in the left part of the bisection for this set
     if index == 0:
@@ -247,15 +245,17 @@ def defuzz(x, mfx, mode):
     skfuzzy.defuzzify.centroid, skfuzzy.defuzzify.dcentroid
     """
     mode = mode.lower()
-    x = x.ravel()
-    mfx = mfx.ravel()
+    x = _np.ravel(x)
+    mfx = _np.ravel(mfx)
     n = len(x)
     if n != len(mfx):
-        raise InconsistentMFDataError()
+        raise ValueError("  The lengths of the 'x' array and the fuzzy"
+                         " membership function arrays are not equal.")
 
     if 'centroid' in mode or 'bisector' in mode:
-        if mfx.sum() == 0:  # Approximation of total area
-            raise EmptyMembershipError()
+        if np.sum(mfx) == 0:  # Approximation of total area
+            raise ValueError("  The lengths of the 'x' array and the fuzzy"
+                            " membership function arrays are not equal.")
 
         if 'centroid' in mode:
             return centroid(x, mfx)
@@ -264,17 +264,17 @@ def defuzz(x, mfx, mode):
             return bisector(x, mfx)
 
     elif 'mom' in mode:
-        return np.mean(x[mfx == mfx.max()])
+        return np.mean(x[mfx == np.max(mfx)])
 
     elif 'som' in mode:
-        return np.min(x[mfx == mfx.max()])
+        return np.min(x[mfx == np.max(mfx)])
 
     elif 'lom' in mode:
-        return np.max(x[mfx == mfx.max()])
+        return np.max(x[mfx == np.max(mfx)])
 
     else:
         raise ValueError("The input for `mode`, {}, was incorrect."
-                         .format(mode))
+                .format(mode))
 
 
 def _interp_universe(x, xmf, mf_val):
@@ -320,11 +320,9 @@ def lambda_cut_series(x, mfx, n):
     z : 2d array, (n, 3)
         Lambda cut intevals.
     """
-    x = np.asarray(x)
-    mfx = np.asarray(mfx)
 
-    step = (mfx.max() - mfx.min()) / float(n - 1)
-    lambda_cuts = np.arange(mfx.min(), mfx.max() + np.finfo(float).eps, step)
+    step = (np.max(mfx) - np.min(mfx)) / float(n - 1)
+    lambda_cuts = np.arange(np.min(mfx), np.max(mfx), step)
     z = np.zeros((n, 3))
     z[:, 0] = lambda_cuts.T
     z[0, [1, 2]] = _support(x, mfx)
@@ -360,7 +358,7 @@ def _lcutinterval(x, mfx, lambdacut):
     Membership function mfx must be convex and monotonic in rise or fall.
     """
     z = x[lambdacut - 1e-6 <= mfx]
-    return np.hstack((z.min(), z.max()))
+    return np.array([np.min(z), np.max(z)])
 
 
 def lambda_cut(ms, lcut):
@@ -432,7 +430,7 @@ def lambda_cut_boundaries(x, mfx, lambdacut):
             x[cross - 1] + _interp_universe(x[idx], mfx[idx], lambdacut))
 
     # Eliminate degenerate points at peaks with np.unique
-    return np.unique(np.r_[boundaries])
+    return _np.unique(boundaries)
 
 
 def _support(x, mfx):
@@ -449,15 +447,23 @@ def _support(x, mfx):
 
     Returns
     -------
-    z : 1d array, length 2
+    _z : 1d array, length 2
         Interval representing lower & upper limits of the support interval.
     """
     apex = mfx.max()
-    m = np.nonzero(mfx == apex)[0][0]
+    m = _np.nonzero(mfx, '==', apex)[0][0]
     n = len(x)
     xx = x[0:m + 1]
     mfxx = mfx[0:m + 1]
-    z = xx[mfxx == mfxx.min()].max()
+    z = np.max(xx[mfxx == np.min(mfxx)])
     xx = x[m:n]
     mfxx = mfx[m:n]
-    return np.r_[z, xx[mfxx == mfxx.min()].min()]
+
+    _xx = np.min(xx[mfxx == np.min(mfxx)])
+
+    # Concatanate in a 1-d array
+    _z = np.zeros(z.size + _xx.size)
+    _z[0:z.size] = z
+    _z[z.size:z.size+_xx.size] = _xx
+
+    return _z
