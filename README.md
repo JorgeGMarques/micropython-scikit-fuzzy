@@ -1,65 +1,98 @@
-scikit-fuzzy
-============
+MicroPython scikit-fuzzy
+=========================
 
-`scikit-fuzzy` is a fuzzy logic toolkit for SciPy.
+`micropython-scikit-fuzzy` is a fuzzy logic toolkit ported from Python's [SciPy scikit-fuzzy](https://github.com/scikit-fuzzy/scikit-fuzzy) toolkit.
 
-The goals of scikit-fuzzy are:
+The goals of micropython-scikit-fuzzy are:
 * To provide the community with a robust toolkit of independently developed and
   implemented fuzzy logic algorithms
-* To increase the attractiveness of scientific Python as a valid alternative to
+* To increase the attractiveness of scientific MicroPython/CPython as a valid alternative to
   closed-source options.
+* To allow experimenting with embedded control systems without installing software or using cloud based services.
 
-Please cite [![DOI](https://zenodo.org/badge/8872608.svg)](https://zenodo.org/badge/latestdoi/8872608)
+Important notice from `scikit-fuzzy`: Please cite [![DOI](https://zenodo.org/badge/8872608.svg)](https://zenodo.org/badge/latestdoi/8872608)
 if you find scikit-fuzzy useful.  A formal paper describing this package is in
 preparation.
 
 Source
 ------
 
-https://github.com/scikit-fuzzy/scikit-fuzzy
+https://github.com/JorgeGMarques/micropython-scikit-fuzzy
 
 Documentation
 -------------
 
-The documentation of the library can be found here: https://scikit-fuzzy.github.io/scikit-fuzzy
+The documentation of the `scikit-fuzzy` library can be found here: https://scikit-fuzzy.github.io/scikit-fuzzy 
+
+`micropython-scikit-fuzzy` shares exactly the same methods, but some examples are tuned down to run in constrained systems.
+
+
+What's working
+--------------
+There are many tools in `scikit-fuzzy`, the list below shows which modules have been ported:
+
+* cluster/_cmeans.py `✅ Done`
+* cluster/normalize_columns.py `✅ Done`
+* defuzzify/defuzz.py `✅ Done`
+* membership/generatemf.py `✅ Done`
+* fuzzymath/fuzzy_ops.py`👷 Doing`
+* fuzzymath/fuzzy_logic.py `⏰ ToDo`
+* fuzzymath/_continuous_to_discrete.py `⏰ ToDo`
+* intervals/intervalops.py `⏰ ToDo`
+* filters/fire.py `⏰ ToDo`
+* control/antecedent_consequent.py `⏰ ToDo`
+* control/controlsystem.py `⏰ ToDo`
+* control/antecedent_consequent.py `⏰ ToDo`
+* control/fuzzyvariable.py `⏰ ToDo`
+* control/rule.py `⏰ ToDo`
+* control/state.py `⏰ ToDo`
+* control/term.py `⏰ ToDo`
+* control/visualization.py `⏰ ToDo`
+
+Examples:
+
+* plot_cmeans.py `✅ Done`
+* plot_defuzzify.py `✅ Done`
+* plot_control_system_advanced.py `⏰ ToDo`
+* plot_tipping_problem.py `❌ legacy, won't port`
+* plot_tipping_problem_newapi.py `👷 Doing`
+
+Plotting and Programming
+--------------------------------
+
+You can you [BIPES](www.bipes.net.br/ide) to easily program MicroPython boards
+and plot.
+
+The examples have been changed to automatically plot in
+the BIPES platform, replacing matplot.
+
 
 Online Discussion & Mailing List
 --------------------------------
 
-Please join the discussion in our public chat room on Gitter.im
+`scikit-fuzzy`'s public chat room on Gitter.im
 [![Gitter](https://badges.gitter.im/JoinChat.svg)](https://gitter.im/scikit-fuzzy/scikit-fuzzy?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-or view/post on the Google Groups mailing list
+`scikit-fuzzy`'s  Google Groups mailing list
 http://groups.google.com/group/scikit-fuzzy
+
+BIPES discussion forum
+https://github.com/BIPES/BIPES/discussions
 
 Installation
 ------------
 
-Scikit-Fuzzy depends on
+MicroPython-Scikit-Fuzzy depends on
 
-  * NumPy >= 1.6
-  * SciPy >= 0.9
-  * NetworkX >= 1.9
+  * [MicroPython](https://github.com/micropython/micropython/) > v1.17
+  * [micropython-ulab](https://github.com/v923z/micropython-ulab/) > v3.3.6
 
-and is available on PyPi! The latest stable release can always be obtained
-and installed simply by running
+Therefore, MicroPython-Scikit-Fuzzy requires a embedded device (or emulated) runnig MicroPython
+with ulab module.
 
-    $ pip install -U scikit-fuzzy
+If you need help compiling the custom firmware, check out [ulab's readme](https://github.com/v923z/micropython-ulab/), 
+(for the ESP-32 I recommend using this [script](https://github.com/v923z/micropython-ulab/blob/master/build/esp32-cmake.sh))
 
-which will also work to upgrade existing installations to the latest release.
-
-
-If you prefer to install from source or develop this package, you can fork and
-clone this repository then install SciKit-Fuzzy by running
-
-	$ python setup.py install
-
-or develop locally by running
-
-	$ python setup.py develop
-
-If you prefer, you can use SciKit-Fuzzy without installing by simply exporting
-this path to your PYTHONPATH variable.
 
 License
 -------
