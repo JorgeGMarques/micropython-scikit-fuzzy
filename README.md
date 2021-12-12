@@ -60,8 +60,8 @@ Examples:
 Plotting and Programming
 --------------------------------
 
-You can you [BIPES](www.bipes.net.br/ide) to easily program MicroPython boards
-and plot.
+You can use [BIPES](www.bipes.net.br/ide) to easily program MicroPython boards
+and BIPES's Databoard to visualize/plot the fuzzy computations.
 
 The examples have been changed to automatically plot in
 the BIPES platform, replacing matplot.
