@@ -31,7 +31,7 @@ def _nearest(x, y0):
     """
     # Distance map
     d = abs(x - y0)
-    idx0 = np.nonzero(d, '==', d.min())[0][0]
+    idx0 = np.match(d, '==', d.min())[0][0]
     return idx0, x[idx0]
 
 
@@ -226,20 +226,20 @@ def pimf(x, a, b, c, d):
     idx = x <= a
     y[idx] = 0
 
-    idx = _np.logical_and(np.where(x >= a, 1, 0), np.where(x <= (a + b) / 2.), 1, 0)
+    idx = _np.logical_and(np.where(x >= a, 1., 0.), np.where(x <= (a + b) / 2.), 1., 0.)
     y[idx] = 2. * ((x[idx] - a) / (b - a)) ** 2.
 
-    idx = _np.logical_and(np.where(x > (a + b) / 2., 1, 0), np.where(x <= b, 1, 0)
-    y[idx] = 1 - 2. * ((x[idx] - b) / (b - a)) ** 2.
+    idx = _np.logical_and(np.where(x > (a + b) / 2., 1., 0.), np.where(x <= b, 1., 0.))
+    y[idx] = 1. - 2. * ((x[idx] - b) / (b - a)) ** 2.
 
-    idx = _np.logical_and(np.where(x >= c, 1, 0), np.where(x < (c + d) / 2.), 1, 0)
-    y[idx] = 1 - 2. * ((x[idx] - c) / (d - c)) ** 2.
+    idx = _np.logical_and(np.where(x >= c, 1., 0.), np.where(x < (c + d) / 2.), 1., 0.)
+    y[idx] = 1. - 2. * ((x[idx] - c) / (d - c)) ** 2.
 
-    idx = _np.logical_and(np.where(x >= (c + d) / 2., 1, 0), np.where(x <= d), 1, 0)
+    idx = _np.logical_and(np.where(x >= (c + d) / 2., 1., 0.), np.where(x <= d), 1., 0.)
     y[idx] = 2. * ((x[idx] - d) / (d - c)) ** 2.
 
     idx = x >= d
-    y[idx] = 0
+    y[idx] = 0.
 
     return y
 
@@ -366,10 +366,10 @@ def smf(x, a, b):
     idx = x <= a
     y[idx] = 0
 
-    idx = _np.logical_and(np.where(x >= a, 1, 0), np.where(x <= (a + b) / 2., 1, 0)
+    idx = _np.logical_and(np.where(x >= a, 1, 0), np.where(x <= (a + b) / 2., 1, 0))
     y[idx] = 2. * ((x[idx] - a) / (b - a)) ** 2.
 
-    idx = _np.logical_and(np.where(x >= (a + b) / 2.), 1, 0), np.where(x <= b, 1, 0)
+    idx = _np.logical_and(np.where(x >= (a + b) / 2., 1, 0), np.where(x <= b, 1, 0))
     y[idx] = 1 - 2. * ((x[idx] - b) / (b - a)) ** 2.
 
     return y
@@ -393,21 +393,24 @@ def trapmf(x, abcd):
     """
     assert len(abcd) == 4, 'abcd parameter must have exactly four elements.'
     a, b, c, d = abcd
-    assert a <= b and b <= c and c <= d, 'abcd requires the four elements \
-                                          a <= b <= c <= d.'
+    assert a <= b and b <= c and c <= d, 'a <= b <= c <= d required'
     y = np.ones(len(x))
 
-    idx = _np.nonzero(x, '<=', b)[0]
-    y[idx] = trimf(x[idx], np.array([a, b, b]))
+    idx = _np.match(x, '<=', b)[0]
+    _np.replace(y, trimf(_np.subarray(x, idx), np.array([a, b, b])), idx)
+    #y[idx] = trimf(x[idx], np.array([a, b, b]))
 
-    idx = _np.nonzero(x, '>=', c)[0]
-    y[idx] = trimf(x[idx], np.array([c, c, d]))
+    idx = _np.match(x, '>=', c)[0]
+    _np.replace(y, trimf(_np.subarray(x, idx), np.array([c, c, d])), idx)
+    #y[idx] = trimf(x[idx], np.array([c, c, d]))
 
-    idx = _np.nonzero(x, '<', a)[0]
-    y[idx] = np.zeros(len(idx))
+    idx = _np.match(x, '<', a)[0]
+    _np.replace(y, np.zeros(len(idx)), idx)
+    #y[idx] = np.zeros(len(idx))
 
-    idx = _np.nonzero(x, '>', d)[0]
-    y[idx] = np.zeros(len(idx))
+    idx = _np.match(x, '>', d)[0]
+    _np.replace(y, np.zeros(len(idx)), idx)
+    #y[idx] = np.zeros(len(idx))
 
     return y
 
@@ -437,16 +440,18 @@ def trimf(x, abc):
 
     # Left side
     if a != b:
-        idx = _np.nonzero(_np.logical_and(np.where(x > a, 1, 0), np.where(x < b, 1, 0)), '==', 1)[0]
-        y[idx] = (x[idx] - a) / float(b - a)
+        idx = _np.match(_np.logical_and(np.where(x > a, 1, 0), np.where(x < b, 1, 0)), '==', 1)[0]
+        _np.replace(y, ((_np.subarray(x, idx) - a) / float(b - a)), idx)
+        #y[idx] = (x[idx] - a) / float(b - a)
 
     # Right side
     if b != c:
-        idx = _np.nonzero(_np.logical_and(np.where(x > b, 1, 0), np.where(x < c, 1, 0)), '==', 1)[0]
-        y[idx] = (c - x[idx]) / float(c - b)
+        idx = _np.match(_np.logical_and(np.where(x > b, 1, 0), np.where(x < c, 1, 0)), '==', 1)[0]
+        _np.replace(y, ((c - _np.subarray(x, idx)) / float(c - b)), idx)
+        #y[idx] = (c - x[idx]) / float(c - b)
 
-    idx = _np.nonzero(x, '==', b)
-    y[idx] = 1
+    idx = _np.match(x, '==', b)[0]
+    _np.replace(y, np.ones(idx.size), idx)
     return y
 
 
@@ -476,13 +481,14 @@ def zmf(x, a, b):
 
     y = np.ones(len(x))
 
-    idx = _np.logical_and(np.where(x >= a, 1, 0), np.where(x < (a + b) / 2., 1, 0))
-    y[idx] = 1 - 2. * ((x[idx] - a) / (b - a)) ** 2.
+    idx = _np.logical_and(np.where(x >= a, 1., 0.), np.where(x < (a + b) / 2., 1., 0.))
+    _np.replace(y, (1. - 2. * ((_np.subarray(x, idx) - a) / (b - a))) ** 2., idx)
+    #y[idx] = 1 - 2. * ((x[idx] - a) / (b - a)) ** 2.
 
-    idx = _np.logical_and(np.where(x >= (a + b) / 2., 1, 0), np.where(x <= b, 1, 0))
-    y[idx] = 2. * ((x[idx] - b) / (b - a)) ** 2.
+    idx = _np.logical_and(np.where(x >= (a + b) / 2., 1., 0.), np.where(x <= b, 1., 0.))
+    _np.replace(y, (2. * ((_np.subarray(x, idx) - b) / (b - a))) ** 2., idx)
 
     idx = x >= b
-    y[idx] = 0
+    _np.replace(y, np.zeros(idx.size), idx)
 
     return y

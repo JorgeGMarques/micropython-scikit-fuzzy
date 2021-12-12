@@ -21,6 +21,7 @@ test data to work with.
 
 """
 from ulab import numpy as np
+import ulab_extended as _np
 from bipes import databoard as db
 import _cmeans
 import normalize_columns
@@ -132,7 +133,7 @@ def vstack_1d(a,b):
         else:
             _hstack[i] = b[i-ca]
 # Set up the loop and plot
-alldata = _cmeans.vstack(xpts, ypts)
+alldata = _np.vstack(xpts, ypts)
 fpcs = []
 
 for ncenters in range(2, 6):

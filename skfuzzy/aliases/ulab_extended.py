@@ -20,8 +20,8 @@ def hstack(a,b):
     Horizontal stacked array
     """
 
-    a = _atleast_2d(a)
-    b = _atleast_2d(b)
+    a = atleast_2d(a)
+    b = atleast_2d(b)
 
     ra, ca = a.shape
     rb, cb = b.shape
@@ -51,8 +51,8 @@ def vstack(a,b):
     Vertical stacked array
     """
 
-    a = _atleast_2d(a)
-    b = _atleast_2d(b)
+    a = atleast_2d(a)
+    b = atleast_2d(b)
 
     ra, ca = a.shape
     rb, cb = b.shape
@@ -89,7 +89,46 @@ def atleast_2d(x):
     else:
         return np.array([[x]])
 
-def nonzero(a, op, b):
+def subarray(a, ida):
+   """
+    Return 1 dimesion numpy array with the elements at the indices, alias
+    to a[ida] from numpy
+
+    Parameters
+    ----------
+    a  : 1d array of elements
+    ida : 1d array of indices
+
+    Returns
+    -------
+    b : 1d array
+        Sub array with only elements of a at ida indices.
+    """
+    b = np.zeros(ida.size)
+    for i in range(0, ida.size):
+        b[i] = a[int(ida[i])]
+
+    return b
+
+def replace(a, b, ida):
+    """
+    Return 1 dimension numpy array with the elements at the indices replaced
+    by b elements. Length of b must be length of ida
+    Alias to a[ida] = b from numpy
+
+    Parameters
+    ----------
+    a : 1d array of elements
+    b : 1d array of source elements
+    ida : 1d array of indices of a to be replaced by b
+
+    """
+    assert b.size == ida.size, 'indices must be the same length of ida'
+
+    for i in range(0, ida.size):
+        a[int(ida[i])] = b[i]
+
+def match(a, op, b):
     """
     Return a turple with 1 dimesion numpy array with the indices corresponding
     to the elements that match the condition.
@@ -97,7 +136,7 @@ def nonzero(a, op, b):
     Parameters
     ----------
     a : 1d array
-        Fuzzy membership sequence.
+        Elements array.
     op : string
         Comparation operator.
     b : float
@@ -105,7 +144,7 @@ def nonzero(a, op, b):
 
     Returns
     -------
-    nonzero : 1d array inside turple
+    match : 1d array inside turple
         Indices corresponding to the elements that match the condition
     """
     _where = {
@@ -115,11 +154,11 @@ def nonzero(a, op, b):
         '<' : np.where(a <  b, 1, 0),
         '>' : np.where(a >  b, 1, 0)
     }[op]
-    _nonzero = []
+    _match = []
     for i in range(0, a.size):
         if (_where[i] == 1):
-            _nonzero.append(i)
-    return (np.array(_nonzero),)
+            _match.append(i)
+    return (np.array(_match),)
 
 
 def ravel(a):
@@ -136,6 +175,9 @@ def ravel(a):
     y : 1d array
         An array of the same subtype as a, with shape (a.size,).
     """
+    if (len(a.shape) == 1):
+        return a
+
     (r,c) = a.shape
 
     y = np.zeros(a.size)
@@ -191,9 +233,9 @@ def logical_and(x1,x2):
         of x1 and x2.
     """
 
-    y = np.zeros(x.size)
+    y = np.zeros(x1.size)
 
-    for i  in range(0, x.size):
-        y[i] = 1 if x[i] == 1 and y[i] == 1 else 0
+    for i  in range(0, x1.size):
+        y[i] = 1 if x1[i] == 1 and x2[i] == 1 else 0
 
     return y

@@ -13,6 +13,7 @@ There are several possible methods for defuzzification, exposed via
 from ulab import numpy as np
 from bipes import databoard as db
 import defuzz as fuzz
+import fuzzy_ops
 
 from generatemf import trapmf
 
@@ -37,10 +38,12 @@ xvals = [defuzz_centroid,
          defuzz_som,
          defuzz_lom]
 colors = ['r', 'b', 'g', 'c', 'm']
-ymax = [fuzz.interp_membership(x, mfx, i) for i in xvals]
+ymax = [fuzzy_ops.interp_membership(x, mfx, i) for i in xvals]
 
 # Display and compare defuzzification results against membership function
 
 db.push(x, mfx, 0, 'defuzz0')
-for xv, y, label, color in zip(xvals, ymax, labels, colors):
-    db.push(xv, y, 1, 'defuzz1')
+for i, (xv, y) in enumerate(zip(xvals, ymax)):
+    # To make a line, push (xv,0)
+    db.push(xv, 0, 1+i, 'defuzz0')
+    db.push(xv, y[0], 1+i, 'defuzz0')

@@ -2,7 +2,8 @@
 fuzzy_ops.py : Package of general operations on fuzzy sets, fuzzy membership
                functions, and their associated universe variables.
 """
-import numpy as np
+from ulab import numpy as np
+import numpy_extended as _np
 
 
 def cartadd(x, y):

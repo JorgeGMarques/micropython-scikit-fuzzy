@@ -26,13 +26,13 @@ def arglcut(ms, lambdacut):
 
     Notes
     -----
-    This is a convenience function for `np._np.nonzero(lambdacut <= ms)` and only
+    This is a convenience function for `np._np.match(lambdacut <= ms)` and only
     half of the indexing operation that can be more concisely accomplished
     via::
 
       ms[lambdacut <= ms]
     """
-    return _np.nonzero(ms, '<=', lambdacut)
+    return _np.match(ms, '<=', lambdacut)
 
 
 def centroid(x, mfx):
@@ -178,7 +178,7 @@ def bisector(x, mfx):
 
     # index to the figure which cointains the x point that divide the area of
     # the whole fuzzy set in two
-    index = _np.nonzero(np.array(accum_area), '>=', sum_area / 2.)[0][0]
+    index = int(_np.match(np.array(accum_area), '>=', sum_area / 2.)[0][0])
 
     # subarea will be the area in the left part of the bisection for this set
     if index == 0:
@@ -451,7 +451,7 @@ def _support(x, mfx):
         Interval representing lower & upper limits of the support interval.
     """
     apex = mfx.max()
-    m = _np.nonzero(mfx, '==', apex)[0][0]
+    m = _np.match(mfx, '==', apex)[0][0]
     n = len(x)
     xx = x[0:m + 1]
     mfxx = mfx[0:m + 1]
