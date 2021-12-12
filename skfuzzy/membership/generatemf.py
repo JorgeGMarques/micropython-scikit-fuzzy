@@ -81,7 +81,7 @@ def gaussmf(x, mean, sigma):
     y : 1d array
         Gaussian membership function for x.
     """
-    return np.exp(-((x - mean)**2.) / (2 * sigma**2.))
+    return np.exp(-((x - mean)**2.) / (2. * sigma**2.))
 
 
 def gauss2mf(x, mean1, sigma1, mean2, sigma2):
@@ -145,7 +145,7 @@ def gbellmf(x, a, b, c):
 
         y(x) = 1 / (1 + abs([x - c] / a) ** [2 * b])
     """
-    return 1. / (1. + abs((x - c) / a) ** (2 * b))
+    return 1. / (1. + abs((x - c) / a) ** (2. * b))
 
 
 def piecemf(x, abc):
@@ -181,7 +181,7 @@ def piecemf(x, abc):
     n = len(x)
     y = np.zeros(n)
 
-    idx0 = _nearest(x, 0)[0]
+    idx0 = _nearest(x, 0.)[0]
     idxa = _nearest(x, a)[0]
     idxb = _nearest(x, b)[0]
 
@@ -224,7 +224,7 @@ def pimf(x, a, b, c, d):
     assert a <= b and b <= c and c <= d, 'a <= b <= c <= d is required.'
 
     idx = x <= a
-    y[idx] = 0
+    y[idx] = 0.
 
     idx = _np.logical_and(np.where(x >= a, 1., 0.), np.where(x <= (a + b) / 2.), 1., 0.)
     y[idx] = 2. * ((x[idx] - a) / (b - a)) ** 2.
@@ -364,13 +364,13 @@ def smf(x, a, b):
     assert a <= b, 'a <= b is required.'
     y = np.ones(len(x))
     idx = x <= a
-    y[idx] = 0
+    y[idx] = 0.
 
-    idx = _np.logical_and(np.where(x >= a, 1, 0), np.where(x <= (a + b) / 2., 1, 0))
+    idx = _np.logical_and(np.where(x >= a, 1., 0.), np.where(x <= (a + b) / 2., 1., 0.))
     y[idx] = 2. * ((x[idx] - a) / (b - a)) ** 2.
 
-    idx = _np.logical_and(np.where(x >= (a + b) / 2., 1, 0), np.where(x <= b, 1, 0))
-    y[idx] = 1 - 2. * ((x[idx] - b) / (b - a)) ** 2.
+    idx = _np.logical_and(np.where(x >= (a + b) / 2., 1., 0.), np.where(x <= b, 1., 0.))
+    y[idx] = 1. - 2. * ((x[idx] - b) / (b - a)) ** 2.
 
     return y
 
@@ -398,19 +398,15 @@ def trapmf(x, abcd):
 
     idx = _np.match(x, '<=', b)[0]
     _np.replace(y, trimf(_np.subarray(x, idx), np.array([a, b, b])), idx)
-    #y[idx] = trimf(x[idx], np.array([a, b, b]))
 
     idx = _np.match(x, '>=', c)[0]
     _np.replace(y, trimf(_np.subarray(x, idx), np.array([c, c, d])), idx)
-    #y[idx] = trimf(x[idx], np.array([c, c, d]))
 
     idx = _np.match(x, '<', a)[0]
     _np.replace(y, np.zeros(len(idx)), idx)
-    #y[idx] = np.zeros(len(idx))
 
     idx = _np.match(x, '>', d)[0]
     _np.replace(y, np.zeros(len(idx)), idx)
-    #y[idx] = np.zeros(len(idx))
 
     return y
 
@@ -440,15 +436,13 @@ def trimf(x, abc):
 
     # Left side
     if a != b:
-        idx = _np.match(_np.logical_and(np.where(x > a, 1, 0), np.where(x < b, 1, 0)), '==', 1)[0]
+        idx = _np.match(_np.logical_and(np.where(x > a, 1., 0.), np.where(x < b, 1., 0.)), '==', 1.)[0]
         _np.replace(y, ((_np.subarray(x, idx) - a) / float(b - a)), idx)
-        #y[idx] = (x[idx] - a) / float(b - a)
 
     # Right side
     if b != c:
-        idx = _np.match(_np.logical_and(np.where(x > b, 1, 0), np.where(x < c, 1, 0)), '==', 1)[0]
+        idx = _np.match(_np.logical_and(np.where(x > b, 1., 0.), np.where(x < c, 1., 0.)), '==', 1.)[0]
         _np.replace(y, ((c - _np.subarray(x, idx)) / float(c - b)), idx)
-        #y[idx] = (c - x[idx]) / float(c - b)
 
     idx = _np.match(x, '==', b)[0]
     _np.replace(y, np.ones(idx.size), idx)
